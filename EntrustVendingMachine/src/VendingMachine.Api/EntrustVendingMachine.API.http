@@ -1,6 +1,84 @@
 @EntrustVendingMachine.API_HostAddress = http://localhost:5190
 
-GET {{EntrustVendingMachine.API_HostAddress}}/weatherforecast/
+### Get available products (in stock only)
+GET {{EntrustVendingMachine.API_HostAddress}}/api/vending-machine/products
 Accept: application/json
+
+###
+
+### Get full machine state (products + coin float)
+GET {{EntrustVendingMachine.API_HostAddress}}/api/vending-machine/state
+Accept: application/json
+
+###
+
+### Load products
+POST {{EntrustVendingMachine.API_HostAddress}}/api/vending-machine/products/load
+Content-Type: application/json
+
+{
+  "products": [
+    { "id": "55555555-5555-5555-5555-555555555555", "name": "Juice", "pricePence": 120, "quantity": 5 }
+  ]
+}
+
+###
+
+### Load change
+POST {{EntrustVendingMachine.API_HostAddress}}/api/vending-machine/change/load
+Content-Type: application/json
+
+{
+  "coins": {
+    "OnePound": 10,
+    "TwentyPence": 10,
+    "TenPence": 10,
+    "FivePence": 10
+  }
+}
+
+###
+
+### Purchase — exact amount (Cola = 150p)
+POST {{EntrustVendingMachine.API_HostAddress}}/api/vending-machine/purchase
+Content-Type: application/json
+
+{
+  "productId": "11111111-1111-1111-1111-111111111111",
+  "amountInsertedPence": 150
+}
+
+###
+
+### Purchase — overpayment (Cola = 150p, insert 200p → 50p change)
+POST {{EntrustVendingMachine.API_HostAddress}}/api/vending-machine/purchase
+Content-Type: application/json
+
+{
+  "productId": "11111111-1111-1111-1111-111111111111",
+  "amountInsertedPence": 200
+}
+
+###
+
+### Purchase — insufficient funds (Cola = 150p, insert 100p → 422)
+POST {{EntrustVendingMachine.API_HostAddress}}/api/vending-machine/purchase
+Content-Type: application/json
+
+{
+  "productId": "11111111-1111-1111-1111-111111111111",
+  "amountInsertedPence": 100
+}
+
+###
+
+### Purchase — unknown product (→ 422)
+POST {{EntrustVendingMachine.API_HostAddress}}/api/vending-machine/purchase
+Content-Type: application/json
+
+{
+  "productId": "00000000-0000-0000-0000-000000000000",
+  "amountInsertedPence": 200
+}
 
 ###
