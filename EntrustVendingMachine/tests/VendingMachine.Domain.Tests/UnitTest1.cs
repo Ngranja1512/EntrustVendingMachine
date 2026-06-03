@@ -14,7 +14,7 @@ public sealed class ResultTests
         var result = Result.Success();
         Assert.True(result.IsSuccess);
         Assert.False(result.IsFailure);
-        Assert.Null(result.Error);
+        Assert.Empty(result.Error);
     }
 
     [Fact]
@@ -32,7 +32,7 @@ public sealed class ResultTests
         var result = Result.Success(42);
         Assert.True(result.IsSuccess);
         Assert.Equal(42, result.Value);
-        Assert.Null(result.Error);
+        Assert.Empty(result.Error);
     }
 
     [Fact]

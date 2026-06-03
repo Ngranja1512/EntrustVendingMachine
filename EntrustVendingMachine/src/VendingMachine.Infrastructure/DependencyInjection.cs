@@ -1,6 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 using VendingMachine.Application.Interfaces;
-using VendingMachine.Domain.Services;
 using VendingMachine.Infrastructure.Repositories;
 
 namespace VendingMachine.Infrastructure;
@@ -11,7 +10,6 @@ public static class DependencyInjection
     /// <summary>Registers Infrastructure layer services with the DI container.</summary>
     public static IServiceCollection AddInfrastructure(this IServiceCollection services)
     {
-        services.AddSingleton<ChangeCalculatorService>();
         services.AddSingleton<IVendingMachineRepository, VendingMachineRepository>();
         return services;
     }

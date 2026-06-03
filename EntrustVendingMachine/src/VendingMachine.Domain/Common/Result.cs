@@ -3,7 +3,7 @@ namespace VendingMachine.Domain.Common;
 /// <summary>Non-generic result for operations that return no value.</summary>
 public sealed class Result
 {
-    private Result(bool isSuccess, string? error)
+    private Result(bool isSuccess, string error)
     {
         IsSuccess = isSuccess;
         Error = error;
@@ -15,11 +15,11 @@ public sealed class Result
     /// <summary>Whether the operation failed.</summary>
     public bool IsFailure => !IsSuccess;
 
-    /// <summary>Error message when the operation failed; null on success.</summary>
-    public string? Error { get; }
+    /// <summary>Error message when the operation failed; <see cref="string.Empty"/> on success.</summary>
+    public string Error { get; }
 
     /// <summary>Creates a successful result.</summary>
-    public static Result Success() => new(true, null);
+    public static Result Success() => new(true, string.Empty);
 
     /// <summary>Creates a failed result with the given error message.</summary>
     public static Result Failure(string error) => new(false, error);
@@ -34,7 +34,7 @@ public sealed class Result
 /// <summary>Result of an operation that returns a value of type <typeparamref name="T"/>.</summary>
 public sealed class Result<T>
 {
-    private Result(bool isSuccess, T? value, string? error)
+    private Result(bool isSuccess, T? value, string error)
     {
         IsSuccess = isSuccess;
         Value = value;
@@ -50,11 +50,11 @@ public sealed class Result<T>
     /// <summary>The result value; only valid when <see cref="IsSuccess"/> is true.</summary>
     public T? Value { get; }
 
-    /// <summary>Error message when the operation failed; null on success.</summary>
-    public string? Error { get; }
+    /// <summary>Error message when the operation failed; <see cref="string.Empty"/> on success.</summary>
+    public string Error { get; }
 
     /// <summary>Creates a successful result carrying a value.</summary>
-    public static Result<T> Success(T value) => new(true, value, null);
+    public static Result<T> Success(T value) => new(true, value, string.Empty);
 
     /// <summary>Creates a failed result with the given error message.</summary>
     public static Result<T> Failure(string error) => new(false, default, error);

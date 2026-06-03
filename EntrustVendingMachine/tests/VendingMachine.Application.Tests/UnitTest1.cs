@@ -1,4 +1,5 @@
-﻿using NSubstitute;
+﻿using Microsoft.Extensions.Logging.Abstractions;
+using NSubstitute;
 using VendingMachine.Application.Commands;
 using VendingMachine.Application.Interfaces;
 using VendingMachine.Application.Services;
@@ -35,7 +36,7 @@ public sealed class VendingMachineServiceTests
         var repo = Substitute.For<IVendingMachineRepository>();
         repo.GetAsync(Arg.Any<CancellationToken>())
             .Returns(machine ?? CreateSeededMachine());
-        var service = new VendingMachineService(repo);
+        var service = new VendingMachineService(repo, NullLogger<VendingMachineService>.Instance);
         return (service, repo);
     }
 

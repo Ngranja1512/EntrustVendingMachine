@@ -10,13 +10,7 @@ namespace VendingMachine.Infrastructure.Repositories;
 public sealed class VendingMachineRepository : IVendingMachineRepository
 {
     private readonly SemaphoreSlim _lock = new(1, 1);
-    private Domain.Entities.VendingMachine _machine;
-
-    public VendingMachineRepository(ChangeCalculatorService changeCalculatorService)
-    {
-        ArgumentNullException.ThrowIfNull(changeCalculatorService);
-        _machine = new Domain.Entities.VendingMachine(changeCalculatorService);
-    }
+    private Domain.Entities.VendingMachine _machine = new(new ChangeCalculatorService());
 
     /// <inheritdoc/>
     public async Task<Domain.Entities.VendingMachine> GetAsync(CancellationToken cancellationToken = default)

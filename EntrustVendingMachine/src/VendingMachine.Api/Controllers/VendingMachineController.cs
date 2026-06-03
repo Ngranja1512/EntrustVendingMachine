@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using VendingMachine.Application.Commands;
 using VendingMachine.Application.DTOs;
-using VendingMachine.Application.Services;
+using VendingMachine.Application.Interfaces;
 using VendingMachine.Api.Models;
 
 namespace VendingMachine.Api.Controllers;
@@ -10,12 +11,15 @@ namespace VendingMachine.Api.Controllers;
 [Route("api/vending-machine")]
 public sealed class VendingMachineController : ControllerBase
 {
-    private readonly VendingMachineService _service;
+    private readonly IVendingMachineService _service;
+    private readonly ILogger<VendingMachineController> _logger;
 
-    public VendingMachineController(VendingMachineService service)
+    public VendingMachineController(IVendingMachineService service, ILogger<VendingMachineController> logger)
     {
         ArgumentNullException.ThrowIfNull(service);
+        ArgumentNullException.ThrowIfNull(logger);
         _service = service;
+        _logger = logger;
     }
 
     /// <summary>Purchases a product by inserting money. Returns the product and any change due.</summary>
@@ -24,6 +28,16 @@ public sealed class VendingMachineController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> Purchase([FromBody] PurchaseRequest request, CancellationToken cancellationToken)
     {
+        if (request.ProductId == Guid.Empty)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Invalid request",
+                Detail = "ProductId must not be empty.",
+                Status = StatusCodes.Status400BadRequest
+            });
+        }
+
         var command = new PurchaseProductCommand(request.ProductId, request.AmountInsertedPence);
         var result = await _service.PurchaseAsync(command, cancellationToken);
 

@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using VendingMachine.Application.Interfaces;
 using VendingMachine.Application.Services;
 
 namespace VendingMachine.Application;
@@ -9,7 +10,7 @@ public static class DependencyInjection
     /// <summary>Registers Application layer services with the DI container.</summary>
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
-        services.AddScoped<VendingMachineService>();
+        services.AddTransient<IVendingMachineService, VendingMachineService>();
         return services;
     }
 }

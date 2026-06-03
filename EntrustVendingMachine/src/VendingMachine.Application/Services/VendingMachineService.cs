@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using VendingMachine.Application.Commands;
 using VendingMachine.Application.DTOs;
 using VendingMachine.Application.Interfaces;
@@ -11,14 +12,17 @@ namespace VendingMachine.Application.Services;
 /// Application service that orchestrates vending machine use cases.
 /// All public methods are asynchronous and return <see cref="Result{T}"/> for foreseeable failures.
 /// </summary>
-public sealed class VendingMachineService
+public sealed class VendingMachineService : IVendingMachineService
 {
     private readonly IVendingMachineRepository _repository;
+    private readonly ILogger<VendingMachineService> _logger;
 
-    public VendingMachineService(IVendingMachineRepository repository)
+    public VendingMachineService(IVendingMachineRepository repository, ILogger<VendingMachineService> logger)
     {
         ArgumentNullException.ThrowIfNull(repository);
+        ArgumentNullException.ThrowIfNull(logger);
         _repository = repository;
+        _logger = logger;
     }
 
     /// <summary>Purchases a product using the specified payment amount.</summary>
@@ -33,7 +37,8 @@ public sealed class VendingMachineService
 
         if (result.IsFailure)
         {
-            return Result.Failure<PurchaseResultDto>(result.Error!);
+            _logger.LogInformation("Purchase failed for product {ProductId}: {Error}", command.ProductId, result.Error);
+            return Result.Failure<PurchaseResultDto>(result.Error);
         }
 
         await _repository.SaveAsync(machine, cancellationToken);
