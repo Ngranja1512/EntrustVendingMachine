@@ -1,0 +1,6 @@
+@EntrustVendingMachine.API_HostAddress = http://localhost:5190
+
+GET {{EntrustVendingMachine.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
