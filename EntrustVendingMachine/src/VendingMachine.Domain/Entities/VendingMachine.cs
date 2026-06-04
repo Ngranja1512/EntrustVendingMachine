@@ -125,12 +125,10 @@ public sealed class VendingMachine
 
         var changeAmountPence = amountInsertedPence - price;
 
-        // Add inserted coins to float before calculating change so the float includes them.
-        // We'll determine what denomination the inserted amount corresponds to after.
-        // Since the API accepts a raw pence amount (not specific coins), we credit the float
-        // with an equivalent value in the largest denominations available. However, for
-        // simplicity and per the exercise scope, we treat the payment as abstract and only
-        // deduct the change from the float.
+        // The API accepts a raw pence amount, not specific coins. Per this design, the inserted
+        // amount is treated as an abstract payment value rather than a set of physical coins
+        // being added to the float. The machine's coin float is managed explicitly via the
+        // LoadChange method. Therefore, we only deduct the dispensed change from the float.
         var changeResult = _changeCalculator.Calculate(changeAmountPence, _coinFloat);
 
         if (changeResult.IsFailure)
