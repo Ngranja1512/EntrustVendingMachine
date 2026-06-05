@@ -98,8 +98,8 @@ public sealed class VendingMachineController : ControllerBase
     }
 
     /// <summary>Loads or restocks products in the machine.</summary>
-    [HttpPost("products/load")]00BadRequest)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status4
+    [HttpPost("products/load")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> LoadProducts([FromBody] LoadProductsRequest request, CancellationToken cancellationToken)
