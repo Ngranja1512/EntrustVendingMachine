@@ -17,6 +17,8 @@ public sealed record PurchaseResultDto(ProductDto Product, IReadOnlyDictionary<C
 /// <summary>Current state of the vending machine.</summary>
 /// <param name="Products">All products in the machine (in and out of stock).</param>
 /// <param name="CoinFloat">Current coin float: denomination → count.</param>
+/// <param name="UserCreditPence">Current inserted user credit in pence.</param>
 public sealed record MachineStateDto(
     IReadOnlyList<ProductDto> Products,
-    IReadOnlyDictionary<CoinDenomination, int> CoinFloat);
+    IReadOnlyDictionary<CoinDenomination, int> CoinFloat,
+    int UserCreditPence);

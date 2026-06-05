@@ -4,6 +4,7 @@ using VendingMachine.Application.Commands;
 using VendingMachine.Application.DTOs;
 using VendingMachine.Application.Interfaces;
 using VendingMachine.Api.Models;
+using VendingMachine.Domain.Enums;
 
 namespace VendingMachine.Api.Controllers;
 
@@ -22,7 +23,7 @@ public sealed class VendingMachineController : ControllerBase
         _logger = logger;
     }
 
-    /// <summary>Purchases a product by inserting money. Returns the product and any change due.</summary>
+    /// <summary>Purchases a product using currently inserted machine credit. Returns the product and any change due.</summary>
     [HttpPost("purchase")]
     [ProducesResponseType(typeof(PurchaseResultDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
@@ -38,7 +39,7 @@ public sealed class VendingMachineController : ControllerBase
             });
         }
 
-        var command = new PurchaseProductCommand(request.ProductId, request.AmountInsertedPence);
+        var command = new PurchaseProductCommand(request.ProductId);
         var result = await _service.PurchaseAsync(command, cancellationToken);
 
         if (result.IsFailure)
@@ -46,6 +47,49 @@ public sealed class VendingMachineController : ControllerBase
             return UnprocessableEntity(new ProblemDetails
             {
                 Title = "Purchase failed",
+                Detail = result.Error,
+                Status = StatusCodes.Status422UnprocessableEntity
+            });
+        }
+
+        return Ok(result.Value);
+    }
+
+    /// <summary>Inserts money as user credit into the machine.</summary>
+    [HttpPost("credit")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> InsertCredit([FromBody] InsertCreditRequest request, CancellationToken cancellationToken)
+    {
+        var command = new InsertCreditCommand(request.Denomination);
+        var result = await _service.InsertCreditAsync(command, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            return UnprocessableEntity(new ProblemDetails
+            {
+                Title = "Insert credit failed",
+                Detail = result.Error,
+                Status = StatusCodes.Status422UnprocessableEntity
+            });
+        }
+
+        return NoContent();
+    }
+
+    /// <summary>Returns currently inserted user credit from the machine as change coins.</summary>
+    [HttpPost("credit/return")]
+    [ProducesResponseType(typeof(IReadOnlyDictionary<CoinDenomination, int>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> ReturnCredit(CancellationToken cancellationToken)
+    {
+        var result = await _service.ReturnCreditAsync(cancellationToken);
+
+        if (result.IsFailure)
+        {
+            return UnprocessableEntity(new ProblemDetails
+            {
+                Title = "Return credit failed",
                 Detail = result.Error,
                 Status = StatusCodes.Status422UnprocessableEntity
             });

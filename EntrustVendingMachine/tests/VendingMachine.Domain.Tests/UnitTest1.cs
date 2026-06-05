@@ -258,12 +258,14 @@ public sealed class VendingMachineAggregateTests
         var product = CreateProduct(pricePence: 100);
         machine.LoadProducts(new[] { product });
         machine.LoadChange(DefaultCoins());
+        machine.InsertCredit(CoinDenomination.OnePound);
 
-        var result = machine.Purchase(product.Id, 100);
+        var result = machine.Purchase(product.Id);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(product.Id, result.Value.Product.Id);
         Assert.True(result.Value.Change.IsEmpty);
+        Assert.Equal(0, machine.UserCreditPence);
     }
 
     [Fact]
@@ -273,8 +275,10 @@ public sealed class VendingMachineAggregateTests
         var product = CreateProduct(pricePence: 100);
         machine.LoadProducts(new[] { product });
         machine.LoadChange(DefaultCoins());
+        machine.InsertCredit(CoinDenomination.OnePound);
+        machine.InsertCredit(CoinDenomination.FiftyPence);
 
-        var result = machine.Purchase(product.Id, 150);
+        var result = machine.Purchase(product.Id);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(50, result.Value.Change.TotalPence);
@@ -286,19 +290,22 @@ public sealed class VendingMachineAggregateTests
         var machine = CreateMachine();
         var product = CreateProduct(pricePence: 100);
         machine.LoadProducts(new[] { product });
+        machine.InsertCredit(CoinDenomination.FiftyPence);
 
-        var result = machine.Purchase(product.Id, 50);
+        var result = machine.Purchase(product.Id);
 
         Assert.True(result.IsFailure);
         Assert.Contains("Insufficient", result.Error);
+        Assert.Equal(50, machine.UserCreditPence);
     }
 
     [Fact]
     public void Purchase_ShouldReturnFailure_WhenProductNotFound()
     {
         var machine = CreateMachine();
+        machine.InsertCredit(CoinDenomination.TwoPounds);
 
-        var result = machine.Purchase(Guid.NewGuid(), 200);
+        var result = machine.Purchase(Guid.NewGuid());
 
         Assert.True(result.IsFailure);
         Assert.Contains("not found", result.Error);
@@ -311,9 +318,12 @@ public sealed class VendingMachineAggregateTests
         var product = CreateProduct(quantity: 1);
         machine.LoadProducts(new[] { product });
         machine.LoadChange(DefaultCoins());
-        machine.Purchase(product.Id, product.Price.Pence);
+        machine.InsertCredit(CoinDenomination.OnePound);
+        machine.Purchase(product.Id);
 
-        var result = machine.Purchase(product.Id, product.Price.Pence);
+        machine.InsertCredit(CoinDenomination.OnePound);
+
+        var result = machine.Purchase(product.Id);
 
         Assert.True(result.IsFailure);
         Assert.Contains("out of stock", result.Error);
@@ -326,8 +336,9 @@ public sealed class VendingMachineAggregateTests
         var product = CreateProduct(pricePence: 100, quantity: 3);
         machine.LoadProducts(new[] { product });
         machine.LoadChange(DefaultCoins());
+        machine.InsertCredit(CoinDenomination.OnePound);
 
-        machine.Purchase(product.Id, 100);
+        machine.Purchase(product.Id);
 
         Assert.Equal(2, machine.Products[product.Id].Quantity);
     }
@@ -342,10 +353,12 @@ public sealed class VendingMachineAggregateTests
         {
             [CoinDenomination.FiftyPence] = 2
         });
+        machine.InsertCredit(CoinDenomination.OnePound);
+        machine.InsertCredit(CoinDenomination.FiftyPence);
 
-        machine.Purchase(product.Id, 150);
+        machine.Purchase(product.Id);
 
-        Assert.Equal(1, machine.CoinFloat[CoinDenomination.FiftyPence]);
+        Assert.Equal(2, machine.CoinFloat[CoinDenomination.FiftyPence]);
     }
 
     [Fact]
@@ -358,8 +371,44 @@ public sealed class VendingMachineAggregateTests
         {
             [CoinDenomination.TwoPounds] = 5
         });
+        machine.InsertCredit(CoinDenomination.TwoPounds);
 
-        var result = machine.Purchase(product.Id, 200);
+        var result = machine.Purchase(product.Id);
+
+        Assert.True(result.IsFailure);
+    }
+
+    [Fact]
+    public void InsertCredit_ShouldAddToMachineCredit_WhenCoinIsInserted()
+    {
+        var machine = CreateMachine();
+
+        var result = machine.InsertCredit(CoinDenomination.OnePound);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(100, machine.UserCreditPence);
+    }
+
+    [Fact]
+    public void ReturnCredit_ShouldReturnInsertedAmountAsCoins_WhenCreditExists()
+    {
+        var machine = CreateMachine();
+        machine.LoadChange(DefaultCoins());
+        machine.InsertCredit(CoinDenomination.OnePound);
+
+        var result = machine.ReturnCredit();
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(100, result.Value!.TotalPence);
+        Assert.Equal(0, machine.UserCreditPence);
+    }
+
+    [Fact]
+    public void ReturnCredit_ShouldReturnFailure_WhenNoCreditExists()
+    {
+        var machine = CreateMachine();
+
+        var result = machine.ReturnCredit();
 
         Assert.True(result.IsFailure);
     }

@@ -4,6 +4,7 @@ using VendingMachine.Application.DTOs;
 using VendingMachine.Application.Interfaces;
 using VendingMachine.Domain.Common;
 using VendingMachine.Domain.Entities;
+using VendingMachine.Domain.Enums;
 using VendingMachine.Domain.ValueObjects;
 
 namespace VendingMachine.Application.Services;
@@ -33,7 +34,7 @@ public sealed class VendingMachineService : IVendingMachineService
         ArgumentNullException.ThrowIfNull(command);
 
         var machine = await _repository.GetAsync(cancellationToken);
-        var result = machine.Purchase(command.ProductId, command.AmountInsertedPence);
+        var result = machine.Purchase(command.ProductId);
 
         if (result.IsFailure)
         {
@@ -47,6 +48,41 @@ public sealed class VendingMachineService : IVendingMachineService
         return Result.Success(new PurchaseResultDto(
             MapProduct(product),
             change.Coins));
+    }
+
+    /// <summary>Adds user credit to the machine.</summary>
+    public async Task<Result> InsertCreditAsync(
+        InsertCreditCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+
+        var machine = await _repository.GetAsync(cancellationToken);
+        var result = machine.InsertCredit(command.Denomination);
+
+        if (result.IsFailure)
+        {
+            return result;
+        }
+
+        await _repository.SaveAsync(machine, cancellationToken);
+        return Result.Success();
+    }
+
+    /// <summary>Returns current user credit from the machine as coins.</summary>
+    public async Task<Result<IReadOnlyDictionary<CoinDenomination, int>>> ReturnCreditAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var machine = await _repository.GetAsync(cancellationToken);
+        var result = machine.ReturnCredit();
+
+        if (result.IsFailure)
+        {
+            return Result.Failure<IReadOnlyDictionary<CoinDenomination, int>>(result.Error);
+        }
+
+        await _repository.SaveAsync(machine, cancellationToken);
+        return Result.Success<IReadOnlyDictionary<CoinDenomination, int>>(result.Value!.Coins);
     }
 
     /// <summary>Loads or restocks products in the machine.</summary>
@@ -125,7 +161,8 @@ public sealed class VendingMachineService : IVendingMachineService
 
         return new MachineStateDto(
             machine.Products.Values.Select(MapProduct).ToList(),
-            machine.CoinFloat);
+            machine.CoinFloat,
+            machine.UserCreditPence);
     }
 
     /// <summary>Returns only products currently in stock.</summary>

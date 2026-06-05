@@ -9,11 +9,14 @@ public sealed class PurchaseRequest
     /// <summary>The unique identifier of the product to purchase.</summary>
     [Required]
     public Guid ProductId { get; init; }
+}
 
-    /// <summary>Total amount of money inserted, in pence. Must be greater than zero.</summary>
+/// <summary>Request body for inserting a single coin into the machine.</summary>
+public sealed class InsertCreditRequest
+{
+    /// <summary>The denomination of the coin being inserted.</summary>
     [Required]
-    [Range(1, int.MaxValue, ErrorMessage = "Amount inserted must be greater than zero.")]
-    public int AmountInsertedPence { get; init; }
+    public CoinDenomination Denomination { get; init; }
 }
 
 /// <summary>A product to add or restock in the machine.</summary>

@@ -44,37 +44,40 @@ public sealed class VendingMachineServiceTests
     public async Task PurchaseAsync_ShouldReturnSuccess_WhenProductExistsAndFundsAreSufficient()
     {
         var (service, repo) = CreateSut();
+        await service.InsertCreditAsync(new InsertCreditCommand(CoinDenomination.OnePound));
 
-        var result = await service.PurchaseAsync(new PurchaseProductCommand(ProductId, 100));
+        var result = await service.PurchaseAsync(new PurchaseProductCommand(ProductId));
 
         Assert.True(result.IsSuccess);
         Assert.Equal("Cola", result.Value!.Product.Name);
-        await repo.Received(1).SaveAsync(Arg.Any<Domain.Entities.VendingMachine>(), Arg.Any<CancellationToken>());
+        await repo.Received(2).SaveAsync(Arg.Any<Domain.Entities.VendingMachine>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task PurchaseAsync_ShouldReturnChange_WhenOverpaymentProvided()
     {
         var (service, _) = CreateSut();
+        await service.InsertCreditAsync(new InsertCreditCommand(CoinDenomination.OnePound));
+        await service.InsertCreditAsync(new InsertCreditCommand(CoinDenomination.FiftyPence));
 
-        var result = await service.PurchaseAsync(new PurchaseProductCommand(ProductId, 150));
+        var result = await service.PurchaseAsync(new PurchaseProductCommand(ProductId));
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(50, result.Value!.Change.Values.Sum(count =>
-            result.Value.Change.Keys.Zip(result.Value.Change.Values)
-                .Sum(kv => (int)kv.First * kv.Second)));
+        var changePence = result.Value!.Change.Sum(kv => (int)kv.Key * kv.Value);
+        Assert.Equal(50, changePence);
     }
 
     [Fact]
     public async Task PurchaseAsync_ShouldReturnFailure_WhenInsufficientFunds()
     {
         var (service, repo) = CreateSut();
+        await service.InsertCreditAsync(new InsertCreditCommand(CoinDenomination.FiftyPence));
 
-        var result = await service.PurchaseAsync(new PurchaseProductCommand(ProductId, 50));
+        var result = await service.PurchaseAsync(new PurchaseProductCommand(ProductId));
 
         Assert.True(result.IsFailure);
         Assert.Contains("Insufficient", result.Error);
-        await repo.DidNotReceive().SaveAsync(Arg.Any<Domain.Entities.VendingMachine>(), Arg.Any<CancellationToken>());
+        await repo.Received(1).SaveAsync(Arg.Any<Domain.Entities.VendingMachine>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -82,7 +85,7 @@ public sealed class VendingMachineServiceTests
     {
         var (service, _) = CreateSut();
 
-        var result = await service.PurchaseAsync(new PurchaseProductCommand(Guid.NewGuid(), 200));
+        var result = await service.PurchaseAsync(new PurchaseProductCommand(Guid.NewGuid()));
 
         Assert.True(result.IsFailure);
     }
@@ -164,6 +167,7 @@ public sealed class VendingMachineServiceTests
 
         Assert.Single(state.Products);
         Assert.Equal("Cola", state.Products[0].Name);
+        Assert.Equal(0, state.UserCreditPence);
     }
 
     [Fact]
@@ -174,5 +178,40 @@ public sealed class VendingMachineServiceTests
         var products = await service.GetAvailableProductsAsync();
 
         Assert.Single(products);
+    }
+
+    [Fact]
+    public async Task InsertCreditAsync_ShouldReturnSuccess_WhenCoinIsInserted()
+    {
+        var (service, repo) = CreateSut();
+
+        var result = await service.InsertCreditAsync(new InsertCreditCommand(CoinDenomination.OnePound));
+
+        Assert.True(result.IsSuccess);
+        await repo.Received(1).SaveAsync(Arg.Any<Domain.Entities.VendingMachine>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ReturnCreditAsync_ShouldReturnChange_WhenCreditExists()
+    {
+        var (service, repo) = CreateSut();
+        await service.InsertCreditAsync(new InsertCreditCommand(CoinDenomination.OnePound));
+
+        var result = await service.ReturnCreditAsync();
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(100, result.Value!.Sum(kv => (int)kv.Key * kv.Value));
+        await repo.Received(2).SaveAsync(Arg.Any<Domain.Entities.VendingMachine>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ReturnCreditAsync_ShouldReturnFailure_WhenNoCreditExists()
+    {
+        var (service, repo) = CreateSut();
+
+        var result = await service.ReturnCreditAsync();
+
+        Assert.True(result.IsFailure);
+        await repo.DidNotReceive().SaveAsync(Arg.Any<Domain.Entities.VendingMachine>(), Arg.Any<CancellationToken>());
     }
 }

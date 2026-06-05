@@ -14,6 +14,7 @@ public sealed class VendingMachine
     private readonly Dictionary<Guid, Product> _products = new();
     private readonly Dictionary<CoinDenomination, int> _coinFloat = new();
     private readonly ChangeCalculatorService _changeCalculator;
+    private int _userCreditPence;
 
     /// <summary>Creates a new vending machine with an empty inventory and coin float.</summary>
     public VendingMachine(ChangeCalculatorService changeCalculator)
@@ -27,6 +28,9 @@ public sealed class VendingMachine
 
     /// <summary>Read-only view of coins available in the machine's float.</summary>
     public IReadOnlyDictionary<CoinDenomination, int> CoinFloat => _coinFloat;
+
+    /// <summary>Current user credit inserted into the machine, in pence.</summary>
+    public int UserCreditPence => _userCreditPence;
 
     /// <summary>
     /// Loads or restocks products into the machine. Existing products are restocked by the supplied quantity;
@@ -87,23 +91,51 @@ public sealed class VendingMachine
         return Result.Success();
     }
 
+    /// <summary>Accepts a single coin inserted by the user, adding its value to the credit balance and the coin to the float.</summary>
+    /// <param name="denomination">The denomination of the coin inserted.</param>
+    /// <returns>A successful result.</returns>
+    public Result InsertCredit(CoinDenomination denomination)
+    {
+        var pence = (int)denomination;
+        _userCreditPence += pence;
+        _coinFloat[denomination] = _coinFloat.GetValueOrDefault(denomination) + 1;
+        return Result.Success();
+    }
+
+    /// <summary>Returns the currently inserted credit as change from the machine float.</summary>
+    /// <returns>Returned credit as coins, or a failure if no credit is present or exact change cannot be made.</returns>
+    public Result<Change> ReturnCredit()
+    {
+        if (_userCreditPence <= 0)
+        {
+            return Result.Failure<Change>("No credit to return.");
+        }
+
+        var changeResult = _changeCalculator.Calculate(_userCreditPence, _coinFloat);
+
+        if (changeResult.IsFailure)
+        {
+            return Result.Failure<Change>(changeResult.Error!);
+        }
+
+        var change = changeResult.Value!;
+        DeductChangeFromFloat(change);
+        _userCreditPence = 0;
+
+        return Result.Success(change);
+    }
+
     /// <summary>
-    /// Attempts to purchase a product by product id with the supplied payment.
+    /// Attempts to purchase a product by product id using currently inserted machine credit.
     /// On success the product is dispensed and change is returned; the machine state is updated atomically.
     /// </summary>
     /// <param name="productId">The id of the product to purchase.</param>
-    /// <param name="amountInsertedPence">The amount of money inserted in pence.</param>
     /// <returns>
     /// A successful result containing the dispensed product and change,
     /// or a failure result describing why the purchase could not be completed.
     /// </returns>
-    public Result<(Product Product, Change Change)> Purchase(Guid productId, int amountInsertedPence)
+    public Result<(Product Product, Change Change)> Purchase(Guid productId)
     {
-        if (amountInsertedPence <= 0)
-        {
-            return Result.Failure<(Product, Change)>("Amount inserted must be greater than zero.");
-        }
-
         if (!_products.TryGetValue(productId, out var product))
         {
             return Result.Failure<(Product, Change)>($"Product with id '{productId}' was not found.");
@@ -116,19 +148,15 @@ public sealed class VendingMachine
 
         var price = product.Price.Pence;
 
-        if (amountInsertedPence < price)
+        if (_userCreditPence < price)
         {
-            var shortfall = new Money(price - amountInsertedPence);
+            var shortfall = new Money(price - _userCreditPence);
             return Result.Failure<(Product, Change)>(
                 $"Insufficient funds. {shortfall} more is required.");
         }
 
-        var changeAmountPence = amountInsertedPence - price;
+        var changeAmountPence = _userCreditPence - price;
 
-        // The API accepts a raw pence amount, not specific coins. Per this design, the inserted
-        // amount is treated as an abstract payment value rather than a set of physical coins
-        // being added to the float. The machine's coin float is managed explicitly via the
-        // LoadChange method. Therefore, we only deduct the dispensed change from the float.
         var changeResult = _changeCalculator.Calculate(changeAmountPence, _coinFloat);
 
         if (changeResult.IsFailure)
@@ -136,8 +164,17 @@ public sealed class VendingMachine
             return Result.Failure<(Product, Change)>(changeResult.Error!);
         }
 
-        // Commit state: deduct change coins from float, dispense product.
         var change = changeResult.Value!;
+        DeductChangeFromFloat(change);
+
+        product.Dispense();
+        _userCreditPence = 0;
+
+        return Result.Success((product, change));
+    }
+
+    private void DeductChangeFromFloat(Change change)
+    {
         foreach (var (denomination, count) in change.Coins)
         {
             _coinFloat[denomination] -= count;
@@ -146,9 +183,5 @@ public sealed class VendingMachine
                 _coinFloat.Remove(denomination);
             }
         }
-
-        product.Dispense();
-
-        return Result.Success((product, change));
     }
 }
