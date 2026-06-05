@@ -26,7 +26,8 @@ dotnet run --project src/VendingMachine.Api
 ```
 
 The API starts at `https://localhost:5001` / `http://localhost:5000`.  
-OpenAPI docs: `http://localhost:5000/openapi`
+OpenAPI docs: `http://localhost:5000/openapi`  
+Health check: `http://localhost:5000/health`
 
 In `Development` environment, seed data is loaded automatically:
 

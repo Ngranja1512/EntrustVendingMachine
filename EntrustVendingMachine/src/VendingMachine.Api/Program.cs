@@ -1,3 +1,4 @@
+using VendingMachine.Api.HealthChecks;
 using VendingMachine.Application;
 using VendingMachine.Application.Commands;
 using VendingMachine.Application.Interfaces;
@@ -8,6 +9,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
+builder.Services.AddHealthChecks()
+    .AddCheck<VendingMachineHealthCheck>("vending_machine");
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure();
 
@@ -19,6 +22,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.MapHealthChecks("/health");
 app.MapControllers();
 
 // Seed the machine with initial products and change in development.
