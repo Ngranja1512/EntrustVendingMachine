@@ -55,6 +55,7 @@ public sealed class VendingMachineController : ControllerBase
     /// <summary>Inserts money as user credit into the machine.</summary>
     [HttpPost("credit")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> InsertCredit([FromBody] InsertCreditRequest request, CancellationToken cancellationToken)
     {
@@ -77,6 +78,7 @@ public sealed class VendingMachineController : ControllerBase
     /// <summary>Returns currently inserted user credit from the machine as change coins.</summary>
     [HttpPost("credit/return")]
     [ProducesResponseType(typeof(IReadOnlyDictionary<CoinDenomination, int>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> ReturnCredit(CancellationToken cancellationToken)
     {
@@ -96,7 +98,8 @@ public sealed class VendingMachineController : ControllerBase
     }
 
     /// <summary>Loads or restocks products in the machine.</summary>
-    [HttpPost("products/load")]
+    [HttpPost("products/load")]00BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status4
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> LoadProducts([FromBody] LoadProductsRequest request, CancellationToken cancellationToken)

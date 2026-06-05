@@ -21,8 +21,8 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.UseHttpsRedirection();
 app.MapHealthChecks("/health");
+app.UseHttpsRedirection();
 app.MapControllers();
 
 // Seed the machine with initial products and change in development.

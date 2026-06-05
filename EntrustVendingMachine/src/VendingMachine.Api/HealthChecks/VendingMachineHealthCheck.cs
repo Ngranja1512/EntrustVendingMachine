@@ -21,7 +21,7 @@ public sealed class VendingMachineHealthCheck : IHealthCheck
         {
             var machine = await _repository.GetAsync(cancellationToken);
             var productCount = machine.Products.Count;
-            var coinCount = machine.CoinFloat.Sum(kv => kv.Value);
+            var coinCount = machine.CoinFloat.Sum(kv => (int)kv.Key * kv.Value);
 
             return HealthCheckResult.Healthy(
                 $"State accessible. Products: {productCount}, coins in float: {coinCount}.");

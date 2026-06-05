@@ -46,6 +46,7 @@ In `Development` environment, seed data is loaded automatically:
 dotnet test
 ```
 
+| |---|---|
 | Test project | Type | Count |
 |---|---|---|
 | `VendingMachine.Domain.Tests` | Unit | 28 |
@@ -53,6 +54,10 @@ dotnet test
 | `VendingMachine.Api.Tests` | Integration | 11 |
 
 ## API Reference
+
+### `GET /health`
+Returns the health status of the application and vending machine state.
+Returns `200 OK` with status details, or `503 Service Unavailable` on failure.
 
 ### `GET /api/vending-machine/products`
 Returns all in-stock products.
