@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Authentication;
+using VendingMachine.Api.Auth;
 using VendingMachine.Api.HealthChecks;
 using VendingMachine.Application;
 using VendingMachine.Application.Commands;
@@ -14,6 +16,16 @@ builder.Services.AddHealthChecks()
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure();
 
+builder.Services.AddAuthentication(ApiKeyAuthenticationHandler.SchemeName)
+    .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(
+        ApiKeyAuthenticationHandler.SchemeName, null);
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("OperatorOnly", policy =>
+        policy.RequireRole("Operator"));
+});
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -21,6 +33,8 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapHealthChecks("/health");
 app.UseHttpsRedirection();
 app.MapControllers();

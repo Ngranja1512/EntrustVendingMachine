@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VendingMachine.Application.Commands;
 using VendingMachine.Application.DTOs;
@@ -99,6 +100,7 @@ public sealed class VendingMachineController : ControllerBase
 
     /// <summary>Loads or restocks products in the machine.</summary>
     [HttpPost("products/load")]
+    [Authorize(Policy = "OperatorOnly")]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
@@ -126,6 +128,7 @@ public sealed class VendingMachineController : ControllerBase
 
     /// <summary>Loads coins into the machine's change float.</summary>
     [HttpPost("change/load")]
+    [Authorize(Policy = "OperatorOnly")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> LoadChange([FromBody] LoadChangeRequest request, CancellationToken cancellationToken)

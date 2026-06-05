@@ -23,6 +23,7 @@ public sealed class VendingMachineApiTests : IDisposable
     {
         _factory = new WebApplicationFactory<Program>();
         _client = _factory.CreateClient();
+        _client.DefaultRequestHeaders.Add("X-Api-Key", "dev-secret-key");
     }
 
     public void Dispose()
