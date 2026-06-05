@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using VendingMachine.Application.Commands;
 using VendingMachine.Application.DTOs;
 using VendingMachine.Application.Interfaces;
@@ -13,19 +12,17 @@ namespace VendingMachine.Api.Controllers;
 public sealed class VendingMachineController : ControllerBase
 {
     private readonly IVendingMachineService _service;
-    private readonly ILogger<VendingMachineController> _logger;
 
-    public VendingMachineController(IVendingMachineService service, ILogger<VendingMachineController> logger)
+    public VendingMachineController(IVendingMachineService service)
     {
         ArgumentNullException.ThrowIfNull(service);
-        ArgumentNullException.ThrowIfNull(logger);
         _service = service;
-        _logger = logger;
     }
 
     /// <summary>Purchases a product using currently inserted machine credit. Returns the product and any change due.</summary>
     [HttpPost("purchase")]
     [ProducesResponseType(typeof(PurchaseResultDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> Purchase([FromBody] PurchaseRequest request, CancellationToken cancellationToken)
     {

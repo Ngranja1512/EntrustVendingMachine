@@ -59,13 +59,28 @@ Returns all in-stock products.
 ### `GET /api/vending-machine/state`
 Returns full machine state — all products and coin float.
 
-### `POST /api/vending-machine/purchase`
-Purchase a product.
+### `POST /api/vending-machine/credit`
+Insert a single coin as user credit.
 
 ```json
 {
-  "productId": "11111111-1111-1111-1111-111111111111",
-  "amountInsertedPence": 200
+  "denomination": "OnePound"
+}
+```
+
+Returns `204 No Content` on success, or `422 Unprocessable Entity` on failure.
+
+### `POST /api/vending-machine/credit/return`
+Return any currently inserted credit as coins from the float.
+
+Returns `200 OK` with a denomination→count coin map, or `422 Unprocessable Entity` if no credit is present or change cannot be made.
+
+### `POST /api/vending-machine/purchase`
+Purchase a product using accumulated user credit (inserted via `/credit`).
+
+```json
+{
+  "productId": "11111111-1111-1111-1111-111111111111"
 }
 ```
 
