@@ -151,6 +151,7 @@ public sealed class VendingMachineController : ControllerBase
 
     /// <summary>Returns the full current state of the machine including all products and the coin float.</summary>
     [HttpGet("state")]
+    [Authorize(Policy = "OperatorOnly")]
     [ProducesResponseType(typeof(MachineStateDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetState(CancellationToken cancellationToken)
     {

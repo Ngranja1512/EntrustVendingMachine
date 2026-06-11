@@ -63,7 +63,7 @@ Returns `200 OK` with status details, or `503 Service Unavailable` on failure.
 Returns all in-stock products.
 
 ### `GET /api/vending-machine/state`
-Returns full machine state — all products and coin float.
+Returns full machine state — all products and coin float. Operator access required.
 
 ### `POST /api/vending-machine/credit`
 Insert a single coin as user credit.

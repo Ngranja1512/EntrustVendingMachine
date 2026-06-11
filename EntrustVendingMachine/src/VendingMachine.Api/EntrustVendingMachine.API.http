@@ -1,4 +1,5 @@
 @EntrustVendingMachine.API_HostAddress = http://localhost:5190
+@operatorKey = dev-secret-key
 
 ### Get available products (in stock only)
 GET {{EntrustVendingMachine.API_HostAddress}}/api/vending-machine/products
@@ -6,15 +7,17 @@ Accept: application/json
 
 ###
 
-### Get full machine state (products + coin float)
+### Get full machine state (products + coin float + user credit) — operator only
 GET {{EntrustVendingMachine.API_HostAddress}}/api/vending-machine/state
+X-Api-Key: {{operatorKey}}
 Accept: application/json
 
 ###
 
-### Load products
+### Load products (operator only)
 POST {{EntrustVendingMachine.API_HostAddress}}/api/vending-machine/products/load
 Content-Type: application/json
+X-Api-Key: {{operatorKey}}
 
 {
   "products": [
@@ -24,50 +27,74 @@ Content-Type: application/json
 
 ###
 
-### Load change
+### Load change (operator only)
 POST {{EntrustVendingMachine.API_HostAddress}}/api/vending-machine/change/load
 Content-Type: application/json
+X-Api-Key: {{operatorKey}}
 
 {
   "coins": {
-    "OnePound": 10,
-    "TwentyPence": 10,
-    "TenPence": 10,
-    "FivePence": 10
+    "OnePound": 20,
+    "FiftyPence": 20,
+    "TwentyPence": 20,
+    "TenPence": 20,
+    "FivePence": 20
   }
 }
 
 ###
 
-### Purchase — exact amount (Cola = 150p)
-POST {{EntrustVendingMachine.API_HostAddress}}/api/vending-machine/purchase
+### Insert credit — £1 coin
+POST {{EntrustVendingMachine.API_HostAddress}}/api/vending-machine/credit
 Content-Type: application/json
 
 {
-  "productId": "11111111-1111-1111-1111-111111111111",
-  "amountInsertedPence": 150
+  "denomination": "OnePound"
 }
 
 ###
 
-### Purchase — overpayment (Cola = 150p, insert 200p → 50p change)
-POST {{EntrustVendingMachine.API_HostAddress}}/api/vending-machine/purchase
+### Insert credit — 50p coin (build up enough for Cola)
+POST {{EntrustVendingMachine.API_HostAddress}}/api/vending-machine/credit
 Content-Type: application/json
 
 {
-  "productId": "11111111-1111-1111-1111-111111111111",
-  "amountInsertedPence": 200
+  "denomination": "FiftyPence"
 }
 
 ###
 
-### Purchase — insufficient funds (Cola = 150p, insert 100p → 422)
+### Return current credit
+POST {{EntrustVendingMachine.API_HostAddress}}/api/vending-machine/credit/return
+
+###
+
+### Purchase — Cola with sufficient credit (insert £1 + 50p = 150p first)
 POST {{EntrustVendingMachine.API_HostAddress}}/api/vending-machine/purchase
 Content-Type: application/json
 
 {
-  "productId": "11111111-1111-1111-1111-111111111111",
-  "amountInsertedPence": 100
+  "productId": "11111111-1111-1111-1111-111111111111"
+}
+
+###
+
+### Purchase — overpayment (insert £2 first, expect 50p change)
+POST {{EntrustVendingMachine.API_HostAddress}}/api/vending-machine/purchase
+Content-Type: application/json
+
+{
+  "productId": "11111111-1111-1111-1111-111111111111"
+}
+
+###
+
+### Purchase — insufficient funds (no credit → 422)
+POST {{EntrustVendingMachine.API_HostAddress}}/api/vending-machine/purchase
+Content-Type: application/json
+
+{
+  "productId": "11111111-1111-1111-1111-111111111111"
 }
 
 ###
@@ -77,8 +104,7 @@ POST {{EntrustVendingMachine.API_HostAddress}}/api/vending-machine/purchase
 Content-Type: application/json
 
 {
-  "productId": "00000000-0000-0000-0000-000000000000",
-  "amountInsertedPence": 200
+  "productId": "00000000-0000-0000-0000-000000000000"
 }
 
 ###
